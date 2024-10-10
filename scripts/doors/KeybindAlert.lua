@@ -1,21 +1,20 @@
 --[[
 !how to use this! [WIP SCRIPT]
 
-note: this script is rushed asf because i forgot to save it and rewrote most of it in under 10 minutes
-
-load this script in your script like this <loadstring(game:HttpGet("https://raw.githubusercontent.com/bamb421/bigpoop/refs/heads/main/scripts/doors/KeybindAlert.lua"))()>
-
-and then in your script you put your text and keyletter like this
+put this in your script and change "DropItemText" to whatever and same for "KeyLetter"
 
 local DropItemText = "Default"
 local KeyLetter = "E"
+loadstring(game:HttpGet("https://raw.githubusercontent.com/bamb421/bigpoop/refs/heads/main/scripts/doors/KeybindAlert.lua"))()
 
-and then it should work idk im still figuring this thing out :(
+note: this script is rushed asf because i forgot to save it and had to rewrite most of it
 
-pls dont skid
+pls dont skid :(
+
+--CREDITS--
+Bamb - I coded mostly everything.
+frstee -- Gui to Lua Plugin
 ]]
-
-
 
 local player = game.Players.LocalPlayer
 local playergui = player.PlayerGui 
