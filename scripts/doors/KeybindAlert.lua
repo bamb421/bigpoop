@@ -28,8 +28,6 @@ local Key = Instance.new("TextLabel")
 local UICorner = Instance.new("UICorner")
 local UIPadding_2 = Instance.new("UIPadding")
 local TweenService = game:GetService("TweenService")
-local DropItemText = nil
-local KeyLetter = nil
 
 function createNotif()
 DropItem.Name = "DropItem"
