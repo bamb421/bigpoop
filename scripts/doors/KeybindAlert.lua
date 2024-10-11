@@ -90,7 +90,7 @@ end
 
 function tweenNotif(UIPadding, DropItem)
     local tweenInfo = TweenInfo.new(2, Enum.EasingStyle.Cubic, Enum.EasingDirection.In)
-    local tween = TweenService:Create(UIPadding, tweenInfo, {PaddingBottom = UDim.new(1, 0)})
+    local tween = TweenService:Create(UIPadding, tweenInfo, {PaddingTop = UDim.new(1, 0)})
     tween:Play()
     tween.Completed:Wait()
     DropItem:Destroy()
