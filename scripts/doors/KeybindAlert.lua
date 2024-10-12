@@ -3,10 +3,12 @@
 
 put this in your script and change "DropItemText" to whatever and same for "KeyLetter" and "Time"
 
-local DropItemText = "Default" -- the text that says what the action is
-local KeyLetter = "E" -- the key
-local Time = 5 -- time till the alert disappears
+DropItemText = "Default" -- the text that says what the action is
+KeyLetter = "E" -- the key
+Time = 5 -- time till the alert disappears
 loadstring(game:HttpGet("https://raw.githubusercontent.com/bamb421/bigpoop/refs/heads/main/scripts/doors/KeybindAlert.lua"))()
+
+dont make the variables local or it wont work
 
 note: this script is rushed asf because i forgot to save it and had to rewrite most of it
 
@@ -98,5 +100,5 @@ function tweenNotif(UIPadding, DropItem)
 end
 
 local UIPadding, DropItem = createNotif()
-task.wait(5)
+task.wait(Time)
 tweenNotif(UIPadding, DropItem)
