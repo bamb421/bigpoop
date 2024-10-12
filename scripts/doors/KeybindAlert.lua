@@ -102,4 +102,5 @@ end
 
 local UIPadding, DropItem = createNotif()
 task.wait(Time)
-tweenNotif(UIPadding, DropItem)
+task.spawn(tweenNotif, UIPadding, DropItem)
+
