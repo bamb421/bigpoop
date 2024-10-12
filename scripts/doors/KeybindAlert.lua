@@ -98,5 +98,5 @@ function tweenNotif(UIPadding, DropItem)
 end
 
 local UIPadding, DropItem = createNotif()
-task.wait(Time)
+task.wait(5)
 tweenNotif(UIPadding, DropItem)
