@@ -6,6 +6,7 @@ put this in your script and change "DropItemText" to whatever and same for "KeyL
 DropItemText = "Default" -- the text that says what the action is
 KeyLetter = "E" -- the key
 Time = 5 -- time till the alert disappears
+TweenTime = 2 --how long the tween should last
 loadstring(game:HttpGet("https://raw.githubusercontent.com/bamb421/bigpoop/refs/heads/main/scripts/doors/KeybindAlert.lua"))()
 
 dont make the variables local or it wont work
@@ -92,10 +93,10 @@ function createNotif()
 end
 
 function tweenNotif(UIPadding, DropItem)
-	local tweenInfo = TweenInfo.new(2, Enum.EasingStyle.Cubic, Enum.EasingDirection.In)
+	local tweenInfo = TweenInfo.new(TweenTime, Enum.EasingStyle.Cubic, Enum.EasingDirection.In)
 	local tween = TweenService:Create(UIPadding, tweenInfo, {PaddingTop = UDim.new(1, 0)})
 	tween:Play()
-	tween.Completed:Wait()
+	task.wait(TweenTime)
 	DropItem:Destroy()
 end
 
