@@ -14,6 +14,6 @@ local IdleTrack = Character:FindFirstChild("Humanoid"):LoadAnimation(IdleAnimati
 Crucifix.Equipped:Connect(function()
 	IdleTrack:Play()
 end)
-Crucifix.UnequippedEquipped:Connect(function()
+Crucifix.Unequipped:Connect(function()
 	IdleTrack:Stop()
 end)
