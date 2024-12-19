@@ -2,64 +2,6 @@
 -- Stephen Leitnick
 -- February 26, 2018
 
---[[
-	
-	CameraShaker.CameraShakeInstance
-	
-	cameraShaker = CameraShaker.new(renderPriority, callbackFunction)
-	
-	CameraShaker:Start()
-	CameraShaker:Stop()
-	CameraShaker:StopSustained([fadeOutTime])
-	CameraShaker:Shake(shakeInstance)
-	CameraShaker:ShakeSustain(shakeInstance)
-	CameraShaker:ShakeOnce(magnitude, roughness [, fadeInTime, fadeOutTime, posInfluence, rotInfluence])
-	CameraShaker:StartShake(magnitude, roughness [, fadeInTime, posInfluence, rotInfluence])
-	
-	
-	
-	EXAMPLE:
-	
-		local camShake = CameraShaker.new(Enum.RenderPriority.Camera.Value, function(shakeCFrame)
-			camera.CFrame = playerCFrame * shakeCFrame
-		end)
-		
-		camShake:Start()
-		
-		-- Explosion shake:
-		camShake:Shake(CameraShaker.Presets.Explosion)
-		
-		wait(1)
-		
-		-- Custom shake:
-		camShake:ShakeOnce(3, 1, 0.2, 1.5)
-
-		-- Sustained shake:
-		camShake:ShakeSustain(CameraShaker.Presets.Earthquake)
-
-		-- Stop all sustained shakes:
-		camShake:StopSustained(1) -- Argument is the fadeout time (defaults to the same as fadein time if not supplied)
-
-		-- Stop only one sustained shake:
-		shakeInstance = camShake:ShakeSustain(CameraShaker.Presets.Earthquake)
-		wait(2)
-		shakeInstance:StartFadeOut(1) -- Argument is the fadeout time
-	
-	
-	NOTE:
-	
-		This was based entirely on the EZ Camera Shake asset for Unity3D. I was given written
-		permission by the developer, Road Turtle Games, to port this to Roblox.
-		
-		Original asset link: https://assetstore.unity.com/packages/tools/camera/ez-camera-shake-33148
-
-		GitHub repository: https://github.com/Sleitnick/RbxCameraShaker
-	
-	
---]]
-
-
-
 local CameraShaker = {}
 CameraShaker.__index = CameraShaker
 
@@ -73,19 +15,114 @@ local ANG = CFrame.Angles
 local RAD = math.rad
 local v3Zero = V3()
 
-local CameraShakeInstance = loadstring(game:HttpGet("https://raw.githubusercontent.com/bamb421/bigpoop/refs/heads/main/scripts/ezcamerashake/CameraShakeInstance"))()
-local CameraShakeState = CameraShakeInstance.CameraShakeState
+-- Camera Shake Instance embedded inside CameraShaker
+local CameraShakeInstance = {}
+CameraShakeInstance.__index = CameraShakeInstance
 
-local defaultPosInfluence = V3(0.15, 0.15, 0.15)
-local defaultRotInfluence = V3(1, 1, 1)
+CameraShakeInstance.CameraShakeState = {
+	FadingIn = 0;
+	FadingOut = 1;
+	Sustained = 2;
+	Inactive = 3;
+}
 
-
-CameraShaker.CameraShakeInstance = CameraShakeInstance
-CameraShaker.Presets = loadstring(game:HttpGet("https://raw.githubusercontent.com/bamb421/bigpoop/refs/heads/main/scripts/ezcamerashake/CameraShakePresets"))()
-
-
-function CameraShaker.new(renderPriority, callback)
+function CameraShakeInstance.new(magnitude, roughness, fadeInTime, fadeOutTime)
+	if (fadeInTime == nil) then fadeInTime = 0 end
+	if (fadeOutTime == nil) then fadeOutTime = 0 end
 	
+	assert(type(magnitude) == "number", "Magnitude must be a number")
+	assert(type(roughness) == "number", "Roughness must be a number")
+	assert(type(fadeInTime) == "number", "FadeInTime must be a number")
+	assert(type(fadeOutTime) == "number", "FadeOutTime must be a number")
+	
+	local self = setmetatable({
+		Magnitude = magnitude;
+		Roughness = roughness;
+		PositionInfluence = V3();
+		RotationInfluence = V3();
+		DeleteOnInactive = true;
+		roughMod = 1;
+		magnMod = 1;
+		fadeOutDuration = fadeOutTime;
+		fadeInDuration = fadeInTime;
+		sustain = (fadeInTime > 0);
+		currentFadeTime = (fadeInTime > 0 and 0 or 1);
+		tick = Random.new():NextNumber(-100, 100);
+		_camShakeInstance = true;
+	}, CameraShakeInstance)
+	
+	return self
+end
+
+function CameraShakeInstance:UpdateShake(dt)
+	local _tick = self.tick
+	local currentFadeTime = self.currentFadeTime
+	
+	local offset = V3(
+		math.noise(_tick, 0) * 0.5,
+		math.noise(0, _tick) * 0.5,
+		math.noise(_tick, _tick) * 0.5
+	)
+	
+	if (self.fadeInDuration > 0 and self.sustain) then
+		if (currentFadeTime < 1) then
+			currentFadeTime = currentFadeTime + (dt / self.fadeInDuration)
+		elseif (self.fadeOutDuration > 0) then
+			self.sustain = false
+		end
+	end
+	
+	if (not self.sustain) then
+		currentFadeTime = currentFadeTime - (dt / self.fadeOutDuration)
+	end
+	
+	if (self.sustain) then
+		self.tick = _tick + (dt * self.Roughness * self.roughMod)
+	else
+		self.tick = _tick + (dt * self.Roughness * self.roughMod * currentFadeTime)
+	end
+	
+	self.currentFadeTime = currentFadeTime
+	
+	return offset * self.Magnitude * self.magnMod * currentFadeTime
+end
+
+function CameraShakeInstance:StartFadeOut(fadeOutTime)
+	if (fadeOutTime == 0) then
+		self.currentFadeTime = 0
+	end
+	self.fadeOutDuration = fadeOutTime
+	self.fadeInDuration = 0
+	self.sustain = false
+end
+
+function CameraShakeInstance:StartFadeIn(fadeInTime)
+	if (fadeInTime == 0) then
+		self.currentFadeTime = 1
+	end
+	self.fadeInDuration = fadeInTime or self.fadeInDuration
+	self.fadeOutDuration = 0
+	self.sustain = true
+end
+
+function CameraShakeInstance:GetState()
+	if (self:IsFadingIn()) then
+		return CameraShakeInstance.CameraShakeState.FadingIn
+	elseif (self:IsFadingOut()) then
+		return CameraShakeInstance.CameraShakeState.FadingOut
+	elseif (self:IsShaking()) then
+		return CameraShakeInstance.CameraShakeState.Sustained
+	else
+		return CameraShakeInstance.CameraShakeState.Inactive
+	end
+end
+
+function CameraShakeInstance:IsShaking()
+	return (self.currentFadeTime > 0 or self.sustain)
+end
+
+-- CameraShaker functionality
+function CameraShaker.new(renderPriority, callback)
 	assert(type(renderPriority) == "number", "RenderPriority must be a number (e.g.: Enum.RenderPriority.Camera.Value)")
 	assert(type(callback) == "function", "Callback must be a function")
 	
@@ -101,9 +138,7 @@ function CameraShaker.new(renderPriority, callback)
 	}, CameraShaker)
 	
 	return self
-	
 end
-
 
 function CameraShaker:Start()
 	if (self._running) then return end
@@ -117,59 +152,38 @@ function CameraShaker:Start()
 	end)
 end
 
-
 function CameraShaker:Stop()
 	if (not self._running) then return end
 	game:GetService("RunService"):UnbindFromRenderStep(self._renderName)
 	self._running = false
 end
 
-
-function CameraShaker:StopSustained(duration)
-	for _,c in pairs(self._camShakeInstances) do
-		if (c.fadeOutDuration == 0) then
-			c:StartFadeOut(duration or c.fadeInDuration)
-		end
-	end
-end
-
-
 function CameraShaker:Update(dt)
-	
 	local posAddShake = v3Zero
 	local rotAddShake = v3Zero
-	
 	local instances = self._camShakeInstances
 	
-	-- Update all instances:
-	for i = 1,#instances do
-		
+	for i = 1, #instances do
 		local c = instances[i]
 		local state = c:GetState()
 		
-		if (state == CameraShakeState.Inactive and c.DeleteOnInactive) then
+		if (state == CameraShakeInstance.CameraShakeState.Inactive and c.DeleteOnInactive) then
 			self._removeInstances[#self._removeInstances + 1] = i
-		elseif (state ~= CameraShakeState.Inactive) then
+		elseif (state ~= CameraShakeInstance.CameraShakeState.Inactive) then
 			local shake = c:UpdateShake(dt)
 			posAddShake = posAddShake + (shake * c.PositionInfluence)
 			rotAddShake = rotAddShake + (shake * c.RotationInfluence)
 		end
-		
 	end
 	
-	-- Remove dead instances:
-	for i = #self._removeInstances,1,-1 do
+	for i = #self._removeInstances, 1, -1 do
 		local instIndex = self._removeInstances[i]
 		table.remove(instances, instIndex)
 		self._removeInstances[i] = nil
 	end
 	
-	return CF(posAddShake) *
-			ANG(0, RAD(rotAddShake.Y), 0) *
-			ANG(RAD(rotAddShake.X), 0, RAD(rotAddShake.Z))
-	
+	return CF(posAddShake) * ANG(0, RAD(rotAddShake.Y), 0) * ANG(RAD(rotAddShake.X), 0, RAD(rotAddShake.Z))
 end
-
 
 function CameraShaker:Shake(shakeInstance)
 	assert(type(shakeInstance) == "table" and shakeInstance._camShakeInstance, "ShakeInstance must be of type CameraShakeInstance")
@@ -177,32 +191,12 @@ function CameraShaker:Shake(shakeInstance)
 	return shakeInstance
 end
 
-
-function CameraShaker:ShakeSustain(shakeInstance)
-	assert(type(shakeInstance) == "table" and shakeInstance._camShakeInstance, "ShakeInstance must be of type CameraShakeInstance")
-	self._camShakeInstances[#self._camShakeInstances + 1] = shakeInstance
-	shakeInstance:StartFadeIn(shakeInstance.fadeInDuration)
-	return shakeInstance
-end
-
-
 function CameraShaker:ShakeOnce(magnitude, roughness, fadeInTime, fadeOutTime, posInfluence, rotInfluence)
 	local shakeInstance = CameraShakeInstance.new(magnitude, roughness, fadeInTime, fadeOutTime)
-	shakeInstance.PositionInfluence = (typeof(posInfluence) == "Vector3" and posInfluence or defaultPosInfluence)
-	shakeInstance.RotationInfluence = (typeof(rotInfluence) == "Vector3" and rotInfluence or defaultRotInfluence)
+	shakeInstance.PositionInfluence = (typeof(posInfluence) == "Vector3" and posInfluence or V3(0.15, 0.15, 0.15))
+	shakeInstance.RotationInfluence = (typeof(rotInfluence) == "Vector3" and rotInfluence or V3(1, 1, 1))
 	self._camShakeInstances[#self._camShakeInstances + 1] = shakeInstance
 	return shakeInstance
 end
-
-
-function CameraShaker:StartShake(magnitude, roughness, fadeInTime, posInfluence, rotInfluence)
-	local shakeInstance = CameraShakeInstance.new(magnitude, roughness, fadeInTime)
-	shakeInstance.PositionInfluence = (typeof(posInfluence) == "Vector3" and posInfluence or defaultPosInfluence)
-	shakeInstance.RotationInfluence = (typeof(rotInfluence) == "Vector3" and rotInfluence or defaultRotInfluence)
-	shakeInstance:StartFadeIn(fadeInTime)
-	self._camShakeInstances[#self._camShakeInstances + 1] = shakeInstance
-	return shakeInstance
-end
-
 
 return CameraShaker
