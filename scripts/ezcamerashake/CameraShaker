@@ -48,7 +48,7 @@ function CameraShakeInstance.new(magnitude, roughness, fadeInTime, fadeOutTime)
 		sustain = (fadeInTime > 0);
 		currentFadeTime = (fadeInTime > 0 and 0 or 1);
 		tick = Random.new():NextNumber(-100, 100);
-		_camShakeInstance = true;
+		_camShakeInstance = true;  -- This flag is used to identify this object as a valid CameraShakeInstance
 	}, CameraShakeInstance)
 	
 	return self
@@ -186,6 +186,7 @@ function CameraShaker:Update(dt)
 end
 
 function CameraShaker:Shake(shakeInstance)
+	-- Ensure shakeInstance is of type CameraShakeInstance
 	assert(type(shakeInstance) == "table" and shakeInstance._camShakeInstance, "ShakeInstance must be of type CameraShakeInstance")
 	self._camShakeInstances[#self._camShakeInstances + 1] = shakeInstance
 	return shakeInstance
